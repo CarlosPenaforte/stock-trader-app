@@ -1,32 +1,79 @@
 <template>
   <div id="app">
-    <nav>
-      <router-link to="/">Home</router-link> |
-      <router-link to="/about">About</router-link>
-    </nav>
+    <TopBar @saveData="saveData" />
     <router-view />
   </div>
 </template>
 
+<script>
+  import TopBar from "./components/TopBar.vue";
+  import { mapActions, mapState } from "vuex";
+
+  export default {
+    components: {
+      TopBar,
+    },
+    data() {
+      return {
+        user: [],
+      };
+    },
+    computed: {
+      ...mapState("wallet", {
+        userToSave: (state) => state.userToSave,
+      }),
+    },
+    methods: {
+      ...mapActions("wallet", ["restartApp"]),
+      saveData() {
+        this.$http.get("/").then((res) => {
+          this.user = res.data;
+        });
+        console.log(this.user);
+        if (this.user.length !== 0) {
+          if (this.user[0].name === this.userToSave.name) {
+            this.$http
+              .put(`/${this.user[0].id}`, this.userToSave)
+              .then((res) => console.log(res));
+          } else {
+            this.$http
+              .post("/", this.userToSave)
+              .then((res) => console.log(res));
+          }
+        } else {
+          this.$http.post("/", this.userToSave).then((res) => console.log(res));
+        }
+      },
+      loadData() {
+        this.$http
+          .get("/")
+          .then((res) => {
+            this.user = res.data;
+          })
+          .then(() => {
+            if (this.user.length !== 0) {
+              this.restartApp(this.user[0]);
+            }
+          });
+      },
+    },
+    created() {
+      this.loadData();
+    },
+  };
+</script>
+
 <style>
-#app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-  text-align: center;
-  color: #2c3e50;
-}
-
-nav {
-  padding: 30px;
-}
-
-nav a {
-  font-weight: bold;
-  color: #2c3e50;
-}
-
-nav a.router-link-exact-active {
-  color: #42b983;
-}
+  * {
+    margin: 0;
+    padding: 0;
+  }
+  #app {
+    font-family: Avenir, Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    width: 100vw;
+    min-height: 100vh;
+    background-color: rgb(245, 245, 245);
+  }
 </style>
